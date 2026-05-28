@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dice Roller" />
+  <title>Dice Roller</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #1a1a2e;
+      color: #eee;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      gap: 48px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #a0a0c0;
+      font-weight: 400;
+    }
+
+    #die {
+      width: 160px;
+      height: 160px;
+      background: #16213e;
+      border: 2px solid #e94560;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      font-weight: 700;
+      color: #e94560;
+      box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
+      transition: transform 0.1s ease;
+      position: relative;
+    }
+
+    #die.rolling {
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%   { transform: rotate(0deg)   scale(1); }
+      15%  { transform: rotate(-12deg) scale(0.95); }
+      30%  { transform: rotate(10deg)  scale(1.05); }
+      45%  { transform: rotate(-8deg)  scale(0.97); }
+      60%  { transform: rotate(6deg)   scale(1.03); }
+      75%  { transform: rotate(-4deg)  scale(0.99); }
+      90%  { transform: rotate(2deg)   scale(1.01); }
+      100% { transform: rotate(0deg)   scale(1); }
+    }
+
+    #roll-btn {
+      padding: 20px 60px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(233, 69, 96, 0.45);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      touch-action: manipulation;
+    }
+
+    #roll-btn:active {
+      transform: scale(0.94);
+      box-shadow: 0 2px 12px rgba(233, 69, 96, 0.3);
+    }
+
+    #roll-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    #history {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 320px;
+      min-height: 32px;
+    }
+
+    .hist-chip {
+      background: #16213e;
+      border: 1px solid #2a2a4a;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #a0a0c0;
+      animation: pop-in 0.15s ease;
+    }
+
+    @keyframes pop-in {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .hist-chip.high { color: #4ecca3; border-color: #4ecca3; }
+    .hist-chip.low  { color: #e94560; border-color: #e94560; }
+  </style>
+</head>
+<body>
+  <h1>d6 Roller</h1>
+
+  <div id="die">–</div>
+
+  <button id="roll-btn" onclick="roll()">Roll</button>
+
+  <div id="history"></div>
+
+  <script>
+    const die = document.getElementById('die');
+    const btn = document.getElementById('roll-btn');
+    const history = document.getElementById('history');
+
+    function roll() {
+      btn.disabled = true;
+      die.classList.remove('rolling');
+
+      // Shuffle display during animation
+      let ticks = 0;
+      const interval = setInterval(() => {
+        die.textContent = Math.ceil(Math.random() * 6);
+        ticks++;
+      }, 60);
+
+      // Force reflow to restart animation
+      void die.offsetWidth;
+      die.classList.add('rolling');
+
+      setTimeout(() => {
+        clearInterval(interval);
+        const result = Math.ceil(Math.random() * 6);
+        die.textContent = result;
+        die.classList.remove('rolling');
+        addHistory(result);
+        btn.disabled = false;
+      }, 500);
+    }
+
+    function addHistory(val) {
+      const chip = document.createElement('div');
+      chip.className = 'hist-chip' +
+        (val === 6 ? ' high' : val === 1 ? ' low' : '');
+      chip.textContent = val;
+      history.prepend(chip);
+      // Keep last 10
+      while (history.children.length > 10) {
+        history.removeChild(history.lastChild);
+      }
+    }
+
+    // Also roll on tapping the die itself
+    die.addEventListener('click', () => { if (!btn.disabled) roll(); });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>
